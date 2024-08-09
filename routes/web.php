@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QueraController;
 use App\Http\Controllers\TestController;
@@ -45,5 +46,21 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::get('/logout', function () {
+
+    return Auth::logout();
+
+});
+
+Route::get('forgot-password-mobile', [PasswordResetLinkController::class, 'create_mobile'])->name('password.request.mobile');
+
+Route::post('forgot-password-mobile', [PasswordResetLinkController::class, 'create_mobile'])->name('password.request.mobile');
+
+Route::post('forgot-password-mobile-store', [PasswordResetLinkController::class, 'store_mobile'])->name('password.mobile');
+
+Route::get('/rest/password/mobile/{token}', [PasswordResetLinkController::class, 'edit_passoerd'])->name('password.token');
+
+Route::post('/rest/password/mobile/{token}', [PasswordResetLinkController::class, 'store_password'])->name('password.token');
 
 require __DIR__.'/auth.php';
