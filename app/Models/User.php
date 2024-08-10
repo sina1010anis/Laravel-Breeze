@@ -3,14 +3,23 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use App\Repository\TokenRestPassword;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, TokenRestPassword;
+
+    public $mobile;
+    public $code;
+
+    private $token = null;
 
     /**
      * The attributes that are mass assignable.
@@ -59,5 +68,59 @@ class User extends Authenticatable
 
         return redirect()->route('password.token', ['token' => $token]);
 
+    }
+
+    public static function isHasMobileInUser (string $mobile) :bool
+    {
+
+        return !! User::whereMobile($mobile)->exists();
+
+    }
+
+    public function generateTokenLink()
+    {
+
+        $this->token = Str::replace('/', '***', Hash::make($this->getMobile(). $this->getCode(). time()));
+
+    }
+
+
+    public function getMobile()
+    {
+        return $this->mobile;
+    }
+
+    public function setMobile($mobile)
+    {
+        $this->mobile = $mobile;
+
+        return $this;
+    }
+
+    public function getCode()
+    {
+        return $this->code;
+    }
+
+    public function setCode($code)
+    {
+        $this->code = $code;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of token
+     */
+    public function getToken()
+    {
+
+        if ($this->token == null) {
+
+            $this->generateTokenLink();
+
+        }
+
+        return $this->token;
     }
 }

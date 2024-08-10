@@ -3,46 +3,45 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\RestPasswordValidateRequest;
 use App\Models\RestPassword;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Cookie;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
 class PasswordResetLinkController extends Controller
 {
-    /**
-     * Display the password reset link request view.
-     */
+
     public function create(): View
     {
+
         return view('auth.forgot-password');
+
     }
 
     public function create_mobile(): View
     {
 
+        return view('auth.forgot-password-mobile');
 
-
-        return view('auth.forgot-password-mobile', ['code' => false]);
     }
 
-    /**
-     * Handle an incoming password reset link request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
 
         $request->validate([
+
             'email' => ['required', 'email'],
+
         ]);
 
         // We will send the password reset link to this user. Once we have attempted
@@ -58,74 +57,73 @@ class PasswordResetLinkController extends Controller
                             ->withErrors(['email' => __($status)]);
     }
 
-    public function store_mobile(Request $request)//: RedirectResponse
+    public function store_mobile_code(RestPasswordValidateRequest $request)
     {
 
-        if ($request->has('code')) {
+        $user = new User();
 
-            $request->validate([
+        $user->setCode($request->code)->setMobile($request->mobile);
 
-                'mobile' => ['required'],
+        if (User::isHasMobileInUser($user->mobile)) {
 
-                'code' => ['min:4', 'max:4'],
+            $data = RestPassword::getMobileInUser($user->getMobile());
 
-            ]);
+            if (RestPassword::expChecker($data->time_exp)) {
 
-            if (User::whereMobile($request->mobile)->exists()) {
+                if ($user->getCode() == $data->code_digit) {
 
-                $data = RestPassword::whereMobile($request->mobile)->first();
+                    RestPassword::updateTokenInTableRestPassword($user->getMobile(), $user->getToken());
 
-                if (time() <= $data->time_exp) {
+                    return redirect()->route('password.token', ['token'=> $user->getToken()]);
 
-                    if ($request->code == $data->code_digit) {
+                } else {
 
-                        $token = Hash::make($request->mobile. $request->code. time());
-
-                        $token = Str::replace('/', '***', $token);
-
-                        RestPassword::whereMobile($request->mobile)->update(['token' => $token]);
-
-                        $data2 = RestPassword::whereMobile($request->mobile)->first();
-
-                        return redirect()->route('password.token', ['token'=> $token]);
-
-                    }
-
-                    dd('Error Code Digit');
+                    return view('auth.forgot-password-mobile-code', ['mobile' => $request->mobile, 'error_restPassword'=> 'Error Code Digit....!']);
 
                 }
 
-                dd('Time EXP');
 
             } else {
 
-                dd('Mobile Not Has');
+                return view('auth.forgot-password-mobile-code', ['mobile' => $request->mobile, 'error_restPassword'=> 'Time EXP....!']);
 
             }
 
         } else {
 
-            if (User::whereMobile($request->mobile)->exists()) {
-
-                $code = rand(1354, 9876);
-
-                Log::info('Code (4 Digit)'.$code);
-
-                RestPassword::updateOrCreate(['mobile' => $request->mobile], ['code_digit' => $code, 'time_exp' => time() + 120]);
-
-                return view('auth.forgot-password-mobile', ['code' => true, 'mobile' => $request->mobile]);
-
-            } else {
-
-                dd('Mobile Not Has');
-
-            }
-
-
+            return view('auth.forgot-password-mobile-code', ['mobile' => $request->mobile, 'error_restPassword'=> 'Oh Mobile not Databse....!']);
 
         }
 
+    }
 
+    public function store_mobile(RestPasswordValidateRequest $request)//: RedirectResponse
+    {
+
+        $user = new User();
+
+        $user->setMobile($request->mobile);
+
+        if (User::isHasMobileInUser($user->mobile)) {
+
+            Log::info('Code (4 Digit)'.$user->getCode());
+
+            RestPassword::createPasswordOrUpdate($user->mobile, $user->getCode());
+
+            return view('auth.forgot-password-mobile-code', ['mobile' => $user->mobile]);
+
+        } else {
+
+            return $this->returnBack('Mobile Not Has in databases...!');
+
+        }
+
+    }
+
+    private function returnBack(string $msg) : RedirectResponse
+    {
+
+        return redirect()->back()->with('error:restPassword', $msg);
 
     }
 

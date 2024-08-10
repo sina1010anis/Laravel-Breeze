@@ -59,6 +59,8 @@ Route::post('forgot-password-mobile', [PasswordResetLinkController::class, 'crea
 
 Route::post('forgot-password-mobile-store', [PasswordResetLinkController::class, 'store_mobile'])->name('password.mobile');
 
+Route::post('forgot-password-mobile-code', [PasswordResetLinkController::class, 'store_mobile_code'])->name('password.code');
+
 Route::get('/rest/password/mobile/{token}', [PasswordResetLinkController::class, 'edit_passoerd'])->name('password.token');
 
 Route::post('/rest/password/mobile/{token}', [PasswordResetLinkController::class, 'store_password'])->name('password.token');
