@@ -14,7 +14,7 @@ class RestPassword extends Model
     public static function createPasswordOrUpdate (string $mobile, string $code) : void
     {
 
-        RestPassword::updateOrCreate(['mobile' => $mobile], ['code_digit' => $code, 'time_exp' => time() + 120]);
+        RestPassword::updateOrCreate(['mobile' => $mobile], ['code_digit' => $code, 'time_exp' => time() + 120, 'token' => NULL]);
 
     }
 
@@ -38,4 +38,35 @@ class RestPassword extends Model
         RestPassword::whereMobile($mobile)->update(['token' => $token]);
 
     }
+
+    public static function isHasRestPasswordWhitToken (string $token) : bool
+    {
+
+        return RestPassword::whereToken($token)->exists();
+
+    }
+
+    public static function getRestPasswordWhitTokenAndUpdateUser (string $token, string $password)
+    {
+
+        if (RestPassword::isHasRestPasswordWhitToken($token)) {
+
+            $data =  RestPassword::whereToken($token)->first();
+
+            User::updatePassword($data->mobile, $password);
+
+        }
+
+
+
+    }
+
+    public static function authenticCodeBack (string $mobile) :bool
+    {
+
+        return RestPassword::getMobileInUser($mobile)->time_exp >= time();
+
+    }
+
+
 }

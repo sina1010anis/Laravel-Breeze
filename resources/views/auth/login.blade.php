@@ -45,6 +45,14 @@
                 </a>
             @endif
 
+            @if(session()->has('ok:restPassword'))
+
+                <div class="alert alert-success mt-4 p-2" role="alert">
+                    {{session()->get('ok:restPassword')}}
+                </div>
+
+            @endif
+
             <x-primary-button class="ms-3">
                 {{ __('Log in') }}
             </x-primary-button>

@@ -57,6 +57,28 @@ class PasswordResetLinkController extends Controller
                             ->withErrors(['email' => __($status)]);
     }
 
+    private function isHasMobileInUserForRestPassword(string $mobile, string $code)
+    {
+
+        if (!User::isHasMobileInUser($mobile)) {
+
+            return redirect()->route('password.request.mobile')->with('error:restPassword', 'Find the desired user in the database....!');
+
+        }
+
+        Log::info($code);
+
+        return view('auth.forgot-password-mobile-code', ['mobile' => $mobile]);
+
+    }
+
+    private function checkerTimeExpInRestPassword(string $time, string $mobile, string $token)
+    {
+
+        return (!RestPassword::expChecker($time) or !User::isHasMobileInUser($mobile)) ? redirect()->route('password.request.mobile')->with('error:restPassword', 'Time EXP Error....!') : redirect()->route('password.token', ['token' => $token]);
+
+    }
+
     public function store_mobile_code(RestPasswordValidateRequest $request)
     {
 
@@ -64,59 +86,37 @@ class PasswordResetLinkController extends Controller
 
         $user->setCode($request->code)->setMobile($request->mobile);
 
-        if (User::isHasMobileInUser($user->mobile)) {
+        $data = RestPassword::getMobileInUser($user->getMobile());
 
-            $data = RestPassword::getMobileInUser($user->getMobile());
+        if ($data->code_digit == $request->code) {
 
-            if (RestPassword::expChecker($data->time_exp)) {
+            RestPassword::updateTokenInTableRestPassword($user->getMobile(), $user->getToken());
 
-                if ($user->getCode() == $data->code_digit) {
-
-                    RestPassword::updateTokenInTableRestPassword($user->getMobile(), $user->getToken());
-
-                    return redirect()->route('password.token', ['token'=> $user->getToken()]);
-
-                } else {
-
-                    return view('auth.forgot-password-mobile-code', ['mobile' => $request->mobile, 'error_restPassword'=> 'Error Code Digit....!']);
-
-                }
-
-
-            } else {
-
-                return view('auth.forgot-password-mobile-code', ['mobile' => $request->mobile, 'error_restPassword'=> 'Time EXP....!']);
-
-            }
-
-        } else {
-
-            return view('auth.forgot-password-mobile-code', ['mobile' => $request->mobile, 'error_restPassword'=> 'Oh Mobile not Databse....!']);
+            return $this->checkerTimeExpInRestPassword($data->time_exp, $user->getMobile(), $user->getToken());
 
         }
+
+        return redirect()->route('password.request.mobile')->with('error:restPassword', 'The code entered is invalid');
 
     }
 
     public function store_mobile(RestPasswordValidateRequest $request)//: RedirectResponse
     {
 
+
         $user = new User();
 
-        $user->setMobile($request->mobile);
+        $user->setCode($request->code)->setMobile($request->mobile);
 
-        if (User::isHasMobileInUser($user->mobile)) {
+        if (RestPassword::authenticCodeBack($user->getMobile())) {
 
-            Log::info('Code (4 Digit)'.$user->getCode());
-
-            RestPassword::createPasswordOrUpdate($user->mobile, $user->getCode());
-
-            return view('auth.forgot-password-mobile-code', ['mobile' => $user->mobile]);
-
-        } else {
-
-            return $this->returnBack('Mobile Not Has in databases...!');
+            return redirect()->route('password.request.mobile')->with('error:restPassword', 'The code has already been sent to you, if you do not receive it, you must wait for 2 minutes.');
 
         }
+
+        RestPassword::createPasswordOrUpdate($user->getMobile(), $user->getCode());
+
+        return $this->isHasMobileInUserForRestPassword($user->getMobile(), $user->getCode());
 
     }
 
@@ -137,15 +137,15 @@ class PasswordResetLinkController extends Controller
     public function store_password(Request $request, $token)
     {
 
-        if ($data = RestPassword::whereToken($token)->first()) {
+        if (RestPassword::isHasRestPasswordWhitToken($request->token)) {
 
-            User::whereMobile($data->mobile)->update(['password' => Hash::make($request->password)]);
+            RestPassword::getRestPasswordWhitTokenAndUpdateUser($request->token, $request->password);
 
-            return redirect()->route('login');
+            return redirect()->route('login')->with('ok:restPassword', 'The password change operation was successful.');
 
         } else {
 
-            throw new \Exception('Error Token');
+            return redirect()->route('password.request.mobile')->with('error:restPassword', 'Invalid Token...!');
 
         }
 

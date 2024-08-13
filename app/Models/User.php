@@ -73,11 +73,11 @@ class User extends Authenticatable
     public static function isHasMobileInUser (string $mobile) :bool
     {
 
-        return !! User::whereMobile($mobile)->exists();
+        return User::whereMobile($mobile)->exists();
 
     }
 
-    public function generateTokenLink()
+    private function generateTokenLink()
     {
 
         $this->token = Str::replace('/', '***', Hash::make($this->getMobile(). $this->getCode(). time()));
@@ -97,10 +97,10 @@ class User extends Authenticatable
         return $this;
     }
 
-    public function getCode()
-    {
-        return $this->code;
-    }
+    // public function getCode()
+    // {
+    //     return $this->code;
+    // }
 
     public function setCode($code)
     {
@@ -122,5 +122,13 @@ class User extends Authenticatable
         }
 
         return $this->token;
+    }
+
+    public static function updatePassword(string $mobile, string $password)
+    {
+
+        return (!User::isHasMobileInUser($mobile)) ?: User::whereMobile($mobile)->update(['password' => Hash::make($password)]);
+
+
     }
 }
