@@ -28,4 +28,13 @@ class TestController extends Controller
 
         dd('OK...!');
     }
+
+    public function ValidateTest(Request $request)
+    {
+
+        $request->validateWithBag('FormTestBag',[
+            'name' => 'required'
+        ]);
+
+    }
 }

@@ -72,7 +72,7 @@ class PasswordResetLinkController extends Controller
 
     }
 
-    private function checkerTimeExpInRestPassword(string $time, string $mobile, string $token)
+    private function checkerTimeExpInRestPassword(string $time, string $mobile, $token)
     {
 
         return (!RestPassword::expChecker($time) or !User::isHasMobileInUser($mobile)) ? redirect()->route('password.request.mobile')->with('error:restPassword', 'Time EXP Error....!') : redirect()->route('password.token', ['token' => $token]);

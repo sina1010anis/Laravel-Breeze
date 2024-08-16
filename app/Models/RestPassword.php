@@ -18,7 +18,7 @@ class RestPassword extends Model
 
     }
 
-    public static function getMobileInUser(string $mobile) : RestPassword
+    public static function getMobileInUser(string $mobile)
     {
 
         return RestPassword::whereMobile($mobile)->first();
@@ -64,7 +64,15 @@ class RestPassword extends Model
     public static function authenticCodeBack (string $mobile) :bool
     {
 
-        return RestPassword::getMobileInUser($mobile)->time_exp >= time();
+        if (RestPassword::getMobileInUser($mobile)) {
+
+            return (RestPassword::getMobileInUser($mobile))->time_exp >= time();
+
+        }
+
+        return false;
+
+
 
     }
 

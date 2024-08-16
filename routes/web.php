@@ -65,4 +65,8 @@ Route::get('/rest/password/mobile/{token}', [PasswordResetLinkController::class,
 
 Route::post('/rest/password/mobile/{token}', [PasswordResetLinkController::class, 'store_password'])->name('password.token');
 
+Route::view('/test/page/validate', 'test-validate');
+
+Route::post('/test/page/validate', [TestController::class, 'ValidateTest'])->name('validate-test');
+
 require __DIR__.'/auth.php';
