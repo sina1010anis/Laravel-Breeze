@@ -8,6 +8,7 @@ use App\Models\Product;
 use Database\Factories\ProductFactory;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
 
@@ -70,3 +71,15 @@ Route::view('/test/page/validate', 'test-validate');
 Route::post('/test/page/validate', [TestController::class, 'ValidateTest'])->name('validate-test');
 
 require __DIR__.'/auth.php';
+
+Route::get('/vue-page', function () {
+
+    return Inertia::render('Welcome');
+
+});
+
+Route::get('/vue-page-2', function () {
+
+    return Inertia::render('Welcome_2', ['username'=>'sina1010']);
+
+});
