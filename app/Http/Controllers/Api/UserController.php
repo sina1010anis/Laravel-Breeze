@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ApiLoginReuqest;
+use App\Http\Requests\ApiRegisterRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use Faker\Extension\Extension;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 
@@ -16,19 +18,65 @@ use Illuminate\Support\Str;
 class UserController extends Controller
 {
 
-    public function throttleKey($email): string
+    private function throttleKey($email): string
     {
 
         return Str::transliterate(Str::lower($email).'|'.request()->ip());
 
     }
 
+    public function creteToken(): string
+    {
+
+        return auth()->user()->createToken('myToken')->plainTextToken;
+
+    }
+
     public function login (ApiLoginReuqest $request)
+    {
+
+        if ($this->limitRate($request->email)) {
+
+            if (Auth::attempt($request->only('email', 'password'))) {
+
+                return request()->json(200, [
+
+                    'data' => auth()->user(),
+
+                    'CODE' => '200',
+
+                    'token' => $this->creteToken()
+
+                ]);
+
+            }
+
+            return request()->json(404, [
+
+                'message' => 'Not find user',
+
+                'CODE' => '404'
+
+            ]);
+
+        }
+
+        return request()->json(404, [
+
+            'message' => 'Request Is High',
+
+            'CODE' => '404'
+
+        ]);
+
+    }
+
+    private function limitRate(string $email): bool
     {
 
         $executed = RateLimiter::attempt(
 
-            $this->throttleKey($request->email),
+            $this->throttleKey($email),
 
             5,
 
@@ -40,67 +88,73 @@ class UserController extends Controller
 
         );
 
-        if ($executed) {
-
-            if (Auth::attempt($request->only('email', 'password'))) {
-
-                $token = auth()->user()->createToken('myToken')->plainTextToken;
-
-                return request()->json(200, [
-
-                    'data' => auth()->user(),
-
-                    'token' => $token
-
-                ]);
-
-            }
-
-            return request()->json(404, 'Error User');
-
-        } else {
-
-            return request()->json(404, 'Request Is High');
-
-        }
+        return $executed;
 
     }
 
-    public function register ()
+    public function register (ApiRegisterRequest $request)
     {
 
-        return 'Register';
+        User::create([
+
+            'name' => $request->name,
+
+            'email' => $request->email,
+
+            'mobile' => $request->mobile,
+
+            'password' => Hash::make($request->password)
+
+        ]);
+
+        return request()->json(202, [
+
+            'message' => 'User successfully created',
+
+            'CODE' => 202
+
+        ]);
 
     }
 
     public function profile ()
     {
 
-        try{
-
-            $user = auth()->user();
-
-        } catch(Extension $e) {
-
-            return request()->json(404, 'User Not Find...!');
-
-        }
+        $user = auth()->user();
 
         return request()->json(200, [
+
             'data' => [
-                'name' => $user->name
+
+                'name' => $user->name,
+
+                'password' => $user->password,
+
+                'email' => $user->email,
+
+                'mobile' => $user->mobile,
+
+                'created_at' => $user->created_at,
+
             ]
+
         ]);
 
-
-
     }
 
 
-    public function logout ()
-    {
+    // public function logout ()
+    // {
 
-        return 'Logout';
+    //     return request()->json(200, [
 
-    }
+    //         'message' => 'User is Logout',
+
+    //         // 'body' => Auth::logout(),
+
+    //         'CODE' => 200
+
+    //     ]);
+
+    // }
 }
