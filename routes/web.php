@@ -6,6 +6,7 @@ use App\Http\Controllers\QueraController;
 use App\Http\Controllers\TestController;
 use App\Models\Product;
 use Database\Factories\ProductFactory;
+use Database\Factories\UserFactory;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -81,5 +82,11 @@ Route::get('/vue-page', function () {
 Route::get('/vue-page-2', function () {
 
     return Inertia::render('Welcome_2', ['username'=>'sina1010']);
+
+});
+
+Route::get('/create/product', function () {
+
+    // ProductFactory::new()->count(200)->create();
 
 });
