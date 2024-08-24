@@ -13,25 +13,25 @@ use Inertia\Inertia;
 
 Route::get('/', function () {
 
-    $id = '4';
+    // $id = '4';
 
-    $key = 'product:'.$id.':name';
+    // $key = 'product:'.$id.':name';
 
-    if (Redis::executeRaw(['EXISTS', $key])) {
+    // if (Redis::executeRaw(['EXISTS', $key])) {
 
-        dd('Redis', Redis::executeRaw(['get', $key]));
+    //     dd('Redis', Redis::executeRaw(['get', $key]));
 
-    } else {
+    // } else {
 
-        $data = Product::find($id);
+    //     $data = Product::find($id);
 
-        Redis::executeRaw(['set', $key, $data->name]);
+    //     Redis::executeRaw(['set', $key, $data->name]);
 
-        dd('Mysql', $data->name);
+    //     dd('Mysql', $data->name);
 
-    }
+    // }
 
-    // return view('welcome');
+    return view('welcome');
 });
 
 Route::get('/test/{key}', [TestController::class, 'index']);

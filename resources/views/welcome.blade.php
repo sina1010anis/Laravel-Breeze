@@ -21,9 +21,11 @@
 
             <test-vue></test-vue>
 
+
+
         </div>
 
-    </body>
+       </body>
 
     @vite('resources/js/app.js')
 

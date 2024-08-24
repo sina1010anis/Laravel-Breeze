@@ -16,3 +16,4 @@ class Product extends Model
         'model',
     ];
 }
+// 
